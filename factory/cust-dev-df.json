@@ -1,0 +1,9 @@
+{
+	"name": "cust-dev-df",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "afe93950-81b5-4e88-ad7a-df9103cabdbb",
+		"tenantId": "2195ff01-06f1-442c-a3ff-bd91739e9eee"
+	}
+}

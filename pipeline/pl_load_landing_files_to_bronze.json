@@ -1,0 +1,273 @@
+{
+	"name": "pl_load_landing_files_to_bronze",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Landing folder Structure",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_landing",
+						"type": "DatasetReference"
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach childitem in landing",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Landing folder Structure",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Landing folder Structure').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Get files inside a folder",
+							"type": "GetMetadata",
+							"dependsOn": [
+								{
+									"activity": "Set foldername variable",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_landing_folder",
+									"type": "DatasetReference",
+									"parameters": {
+										"folder": {
+											"value": "@variables('foldername')",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Copy file from landing to bronze",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Get files inside a folder",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "Source",
+									"value": "landing/@{activity('Get Landing folder Structure').output.childItems}/@{item()}"
+								},
+								{
+									"name": "Destination",
+									"value": "bronze/@{concat(activity('Get Landing folder Structure').output.childItems,'/year=',formatDateTime(utcNow(), 'yyyy'),'/month=',formatDateTime(utcNow(), 'MM'),'/day=',formatDateTime(utcNow(), 'dd'))}/@{item()}"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_landing_files",
+									"type": "DatasetReference",
+									"parameters": {
+										"foldername": {
+											"value": "@variables('foldername')",
+											"type": "Expression"
+										},
+										"filename": {
+											"value": "@activity('Get files inside a folder').output.childItems[0].name",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_bronze_files",
+									"type": "DatasetReference",
+									"parameters": {
+										"folder": {
+											"value": "@variables('foldername')",
+											"type": "Expression"
+										},
+										"year": {
+											"value": "@formatDateTime(utcNow(), 'yyyy')",
+											"type": "Expression"
+										},
+										"month": {
+											"value": "@formatDateTime(utcNow(), 'MM')",
+											"type": "Expression"
+										},
+										"date": {
+											"value": "@formatDateTime(utcNow(), 'dd')",
+											"type": "Expression"
+										},
+										"filename": {
+											"value": "@activity('Get files inside a folder').output.childItems[0].name",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Delete landing after copy",
+							"type": "Delete",
+							"dependsOn": [
+								{
+									"activity": "Copy file from landing to bronze",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "ds_landing_files",
+									"type": "DatasetReference",
+									"parameters": {
+										"foldername": {
+											"value": "@variables('foldername')",
+											"type": "Expression"
+										},
+										"filename": {
+											"value": "@activity('Get Landing folder Structure').output.childItems[0].name",
+											"type": "Expression"
+										}
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						},
+						{
+							"name": "Set foldername variable",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "foldername",
+								"value": {
+									"value": "@string(item().name)",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"foldername": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2025-05-02T22:13:56Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

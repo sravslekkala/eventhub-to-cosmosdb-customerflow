@@ -1,0 +1,110 @@
+{
+	"name": "DelimitedText1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_adls2",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "*",
+				"folderPath": "*",
+				"fileSystem": "landing"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "product_id",
+				"type": "String"
+			},
+			{
+				"name": "product_name",
+				"type": "String"
+			},
+			{
+				"name": "brand",
+				"type": "String"
+			},
+			{
+				"name": "category",
+				"type": "String"
+			},
+			{
+				"name": "price",
+				"type": "String"
+			},
+			{
+				"name": "discount",
+				"type": "String"
+			},
+			{
+				"name": "rating",
+				"type": "String"
+			},
+			{
+				"name": "num_reviews",
+				"type": "String"
+			},
+			{
+				"name": "stock_quantity",
+				"type": "String"
+			},
+			{
+				"name": "status",
+				"type": "String"
+			},
+			{
+				"name": "release_date",
+				"type": "String"
+			},
+			{
+				"name": "supplier_name",
+				"type": "String"
+			},
+			{
+				"name": "supplier_contact",
+				"type": "String"
+			},
+			{
+				"name": "warranty_months",
+				"type": "String"
+			},
+			{
+				"name": "returnable",
+				"type": "String"
+			},
+			{
+				"name": "color",
+				"type": "String"
+			},
+			{
+				"name": "material",
+				"type": "String"
+			},
+			{
+				"name": "weight_grams",
+				"type": "String"
+			},
+			{
+				"name": "dimensions_cm",
+				"type": "String"
+			},
+			{
+				"name": "origin_country",
+				"type": "String"
+			},
+			{
+				"name": "barcode",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
